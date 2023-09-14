@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -7,12 +6,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
+import 'package:twitter_login/twitter_login.dart';
+
+import '../utils/config.dart';
 
 class SignInProvider extends ChangeNotifier {
   ///instance of firebaseAuth , google , facebook
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   final FacebookAuth facebookAuth = FacebookAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn();
+  final twitterLogin = TwitterLogin(
+      apiKey: Config.apikey_twitter,
+      apiSecretKey: Config.secretkey_twitter,
+      redirectURI: "socialauth://");
 
   /// hasError, errorCode, name, email, ID, image ,
   bool _isSignedIn = false;
@@ -64,6 +70,51 @@ class SignInProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Sign in with twitter
+  Future signInWithTwitter() async {
+    final authResult = await twitterLogin.loginV2();
+    if (authResult.status == TwitterLoginStatus.loggedIn) {
+      try {
+        final credential = TwitterAuthProvider.credential(
+            accessToken: authResult.authToken!,
+            secret: authResult.authTokenSecret!);
+        await firebaseAuth.signInWithCredential(credential);
+
+        final userDetails = authResult.user;
+        // save all the data
+        _name = userDetails!.name;
+        _email = firebaseAuth.currentUser!.email;
+        _imageUrl = userDetails.thumbnailImage;
+        _uid = userDetails.id.toString();
+        _provider = "TWITTER";
+        _hasError = false;
+        notifyListeners();
+      } on FirebaseAuthException catch (e) {
+        switch (e.code) {
+          case "account-exists-with-different-credential":
+            _errorCode =
+                "You already have an account with us. Use correct provider";
+            _hasError = true;
+            notifyListeners();
+            break;
+
+          case "null":
+            _errorCode = "Some unexpected error while trying to sign in";
+            _hasError = true;
+            notifyListeners();
+            break;
+          default:
+            _errorCode = e.toString();
+            _hasError = true;
+            notifyListeners();
+        }
+      }
+    } else {
+      _hasError = true;
+      notifyListeners();
+    }
+  }
+
   /// Sign in with google
   Future signInWithGoogle() async {
     final GoogleSignInAccount? googleSignInAccount =
@@ -113,10 +164,11 @@ class SignInProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-/// sign in with facebook
+
+  /// sign in with facebook
   Future signInWithFacebook() async {
     final LoginResult result = await facebookAuth.login();
-    // getting the profile
+    /// getting the profile
     final graphResponse = await http.get(Uri.parse(
         'https://graph.facebook.com/v2.12/me?fields=name,picture.width(800).height(800),first_name,last_name,email&access_token=${result.accessToken!.token}'));
 
@@ -125,7 +177,7 @@ class SignInProvider extends ChangeNotifier {
     if (result.status == LoginStatus.success) {
       try {
         final OAuthCredential credential =
-        FacebookAuthProvider.credential(result.accessToken!.token);
+            FacebookAuthProvider.credential(result.accessToken!.token);
         await firebaseAuth.signInWithCredential(credential);
         // saving the values
         _name = profile['name'];
@@ -139,7 +191,7 @@ class SignInProvider extends ChangeNotifier {
         switch (e.code) {
           case "account-exists-with-different-credential":
             _errorCode =
-            "You already have an account with us. Use correct provider";
+                "You already have an account with us. Use correct provider";
             _hasError = true;
             notifyListeners();
             break;
@@ -177,7 +229,6 @@ class SignInProvider extends ChangeNotifier {
   }
 
   /// save Data To Firestore
-
   Future saveDataToFirestore() async {
     final DocumentReference r =
         FirebaseFirestore.instance.collection("users").doc(uid);
@@ -203,7 +254,7 @@ class SignInProvider extends ChangeNotifier {
     await s.setString('provider', _provider!);
     notifyListeners();
   }
-
+  /// get Data from Shared Preferences
   Future getDataFromSharedPreferences() async {
     final SharedPreferences s = await SharedPreferences.getInstance();
     _name = s.getString('name');
@@ -213,7 +264,6 @@ class SignInProvider extends ChangeNotifier {
     _provider = s.getString('provider');
     notifyListeners();
   }
-
   /// check user exists or not in cloud firestore
   Future<bool> checkUserExists() async {
     DocumentSnapshot snap =
@@ -240,5 +290,16 @@ class SignInProvider extends ChangeNotifier {
   Future clearStorage() async {
     final SharedPreferences s = await SharedPreferences.getInstance();
     s.clear();
+  }
+
+  /// phone Number Auth
+  void phoneNumberUser(User user, email, name) {
+    _name = name;
+    _email = email;
+    _imageUrl =
+        "https://winaero.com/blog/wp-content/uploads/2017/12/User-icon-256-blue.png";
+    _uid = user.phoneNumber;
+    _provider = "PHONE";
+    notifyListeners();
   }
 }

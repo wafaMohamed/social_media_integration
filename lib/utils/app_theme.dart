@@ -4,6 +4,7 @@ abstract class AppTheme{
   static const blueColor = Colors.blue;
   static const redColor = Colors.red;
   static const greyColor = Colors.grey;
+  static const grey600Color = Color(0xff757575FF);
   static const blackColor = Colors.black;
   static const red800Color =  Color(0xffC62828FF);
   static const greenColor =   Colors.green;
