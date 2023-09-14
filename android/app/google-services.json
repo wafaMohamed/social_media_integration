@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "422713588972",
+    "project_id": "blocauth-63c5d",
+    "storage_bucket": "blocauth-63c5d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:422713588972:android:278e6b53504cc6c22979c9",
+        "android_client_info": {
+          "package_name": "com.example.spark_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "422713588972-15thp280n5476ijah5tkgmkmna8r7qch.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlZnMSz4nrot9q33iymSKdiZn4Ny_gaPI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "422713588972-15thp280n5476ijah5tkgmkmna8r7qch.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
