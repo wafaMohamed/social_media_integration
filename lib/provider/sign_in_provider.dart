@@ -188,6 +188,7 @@ class SignInProvider extends ChangeNotifier {
         _provider = "FACEBOOK";
         notifyListeners();
       } on FirebaseAuthException catch (e) {
+
         switch (e.code) {
           case "account-exists-with-different-credential":
             _errorCode =
